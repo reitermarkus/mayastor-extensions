@@ -15,6 +15,7 @@ use collect::{
     rest_wrapper,
 };
 use operations::{Operations, Resource};
+use std::convert::{TryFrom, TryInto};
 
 use crate::collect::{common::OutputFormat, utils::log};
 use std::path::PathBuf;
@@ -48,9 +49,34 @@ pub struct SupportArgs {
     #[clap(global = true, long, short = 'n', default_value = "mayastor")]
     namespace: String,
 
-    /// Collect current pod logs along with historical logs
-    #[clap(global = true, short, long)]
-    current_logs: bool,
+    /// Specify log collection types [historical, current]. We can specify both if we want
+    /// both historical and current logs.
+    #[clap(global = true, long, value_delimiter=',', value_parser = parse_log_collection_type, default_value = "historical")]
+    log_collection_types: Vec<LogCollectionType>,
+}
+
+/// LogCollection types Historical for loki and Current for kubectl.
+#[derive(Debug, Clone, PartialEq)]
+pub enum LogCollectionType {
+    Historical,
+    Current,
+}
+
+// Trait impl that converts slice to LogCollectionType
+impl TryFrom<&str> for LogCollectionType {
+    type Error = String;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        match s.to_lowercase().as_str() {
+            "historical" => Ok(LogCollectionType::Historical),
+            "current" => Ok(LogCollectionType::Current),
+            _ => Err(format!("{s} is not a valid log collection type")),
+        }
+    }
+}
+
+// Function that converts the value from console to the respective types.
+fn parse_log_collection_type(source: &str) -> Result<LogCollectionType, String> {
+    source.trim().try_into()
 }
 
 /// Supportability - collects state & log information of services and dumps it to a tar file.
@@ -119,7 +145,7 @@ impl SupportArgs {
             timeout: cli_args.timeout,
             topologer: None,
             output_format: OutputFormat::Tar,
-            k8s_logs_override: cli_args.current_logs,
+            log_collection_types: cli_args.log_collection_types,
         };
         let mut errors = Vec::new();
         match resource {

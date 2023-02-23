@@ -1,4 +1,7 @@
-use crate::collect::{error::Error, resources::traits::Topologer, rest_wrapper::RestClient};
+use crate::{
+    collect::{error::Error, resources::traits::Topologer, rest_wrapper::RestClient},
+    LogCollectionType,
+};
 use chrono::Local;
 
 /// DumpConfig helps to create new instance of Dumper
@@ -23,8 +26,8 @@ pub(crate) struct DumpConfig {
     /// Topologer implements functionality to build topological infotmation of system
     pub(crate) topologer: Option<Box<dyn Topologer>>,
     pub(crate) output_format: OutputFormat,
-    /// Collect current pod logs along with historical logs
-    pub(crate) k8s_logs_override: bool,
+    /// Log collection types to use.
+    pub(crate) log_collection_types: Vec<LogCollectionType>,
 }
 
 /// The output format.

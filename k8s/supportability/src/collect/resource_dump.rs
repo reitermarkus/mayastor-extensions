@@ -10,7 +10,7 @@ use crate::{
         resources::traits::Topologer,
         utils::{flush_tool_log_file, init_tool_log_file, write_to_log_file},
     },
-    log, OutputFormat,
+    log, LogCollectionType, OutputFormat,
 };
 use futures::future;
 use std::{path::PathBuf, process};
@@ -26,7 +26,7 @@ pub(crate) struct ResourceDumper {
     k8s_resource_dumper: K8sResourceDumperClient,
     etcd_dumper: Option<EtcdStore>,
     output_format: OutputFormat,
-    k8s_logs_override: bool,
+    k8s_logs_override: Vec<LogCollectionType>,
 }
 
 impl ResourceDumper {
@@ -125,7 +125,7 @@ impl ResourceDumper {
             k8s_resource_dumper,
             etcd_dumper,
             output_format: config.output_format,
-            k8s_logs_override: config.k8s_logs_override,
+            k8s_logs_override: config.log_collection_types,
         }
     }
 
@@ -177,7 +177,7 @@ impl ResourceDumper {
         log("Collecting logs...".to_string());
         let _ = self
             .logger
-            .fetch_and_dump_logs(resources, self.dir_path.clone(), self.k8s_logs_override)
+            .fetch_and_dump_logs(resources, self.dir_path.clone(), &self.k8s_logs_override)
             .await
             .map_err(|e| errors.push(Error::LogCollectionError(e)));
         log("Completed collection of logs".to_string());

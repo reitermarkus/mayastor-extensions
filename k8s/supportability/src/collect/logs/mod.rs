@@ -1,17 +1,20 @@
 mod k8s_log;
 mod loki;
 
-use crate::collect::{
-    constants::{
-        CONTROL_PLANE_SERVICES, DATA_PLANE_SERVICES, HOST_NAME_REQUIRED_SERVICES,
-        LOGGING_LABEL_SELECTOR,
+use crate::{
+    collect::{
+        constants::{
+            CONTROL_PLANE_SERVICES, DATA_PLANE_SERVICES, HOST_NAME_REQUIRED_SERVICES,
+            LOGGING_LABEL_SELECTOR,
+        },
+        k8s_resources::{
+            client::{ClientSet, K8sResourceError},
+            common::KUBERNETES_HOST_LABEL_KEY,
+        },
+        logs::k8s_log::{K8sLoggerClient, K8sLoggerError},
+        utils::log,
     },
-    k8s_resources::{
-        client::{ClientSet, K8sResourceError},
-        common::KUBERNETES_HOST_LABEL_KEY,
-    },
-    logs::k8s_log::{K8sLoggerClient, K8sLoggerError},
-    utils::log,
+    LogCollectionType,
 };
 use async_trait::async_trait;
 use k8s_openapi::api::core::v1::Pod;
@@ -210,7 +213,7 @@ impl Logger for LogCollection {
         &mut self,
         resources: HashSet<LogResource>,
         working_dir: String,
-        k8s_logs_override: bool,
+        k8s_logs_override: &Vec<LogCollectionType>,
     ) -> Result<(), LogError> {
         let mut errors = Vec::new();
         for resource in resources.iter() {
@@ -224,16 +227,17 @@ impl Logger for LogCollection {
 
             create_directory_if_not_exist(service_dir.clone())?;
             if let Some(loki_client) = &mut self.loki_client {
-                if loki_client
-                    .fetch_and_dump_logs(
-                        resource.label_selector.clone(),
-                        resource.container_name.clone(),
-                        resource.host_name.clone(),
-                        service_dir.clone(),
-                    )
-                    .await
-                    .is_ok()
-                    && !k8s_logs_override
+                if k8s_logs_override.contains(&LogCollectionType::Historical)
+                    && loki_client
+                        .fetch_and_dump_logs(
+                            resource.label_selector.clone(),
+                            resource.container_name.clone(),
+                            resource.host_name.clone(),
+                            service_dir.clone(),
+                        )
+                        .await
+                        .is_ok()
+                    && !k8s_logs_override.contains(&LogCollectionType::Current)
                 {
                     continue;
                 }
@@ -335,7 +339,7 @@ pub(crate) trait Logger {
         &mut self,
         resources: HashSet<LogResource>,
         working_dir: String,
-        k8s_logs_override: bool,
+        k8s_logs_override: &Vec<LogCollectionType>,
     ) -> Result<(), LogError>;
     async fn get_data_plane_logging_services(&self) -> Result<HashSet<LogResource>, LogError>;
     async fn get_control_plane_logging_services(&self) -> Result<HashSet<LogResource>, LogError>;

@@ -14,7 +14,7 @@ use crate::{
         rest_wrapper::RestClient,
         utils::{flush_tool_log_file, init_tool_log_file, write_to_log_file},
     },
-    log,
+    log, LogCollectionType,
 };
 use futures::future;
 use std::{path::PathBuf, process};
@@ -28,7 +28,7 @@ pub(crate) struct SystemDumper {
     logger: Box<dyn Logger>,
     k8s_resource_dumper: K8sResourceDumperClient,
     etcd_dumper: Option<EtcdStore>,
-    k8s_logs_override: bool,
+    k8s_logs_override: Vec<LogCollectionType>,
 }
 
 impl SystemDumper {
@@ -115,7 +115,7 @@ impl SystemDumper {
             logger,
             k8s_resource_dumper,
             etcd_dumper,
-            k8s_logs_override: config.k8s_logs_override,
+            k8s_logs_override: config.log_collection_types,
         }
     }
 
@@ -205,7 +205,7 @@ impl SystemDumper {
         log("Collecting logs...".to_string());
         let _ = self
             .logger
-            .fetch_and_dump_logs(resources, self.dir_path.clone(), self.k8s_logs_override)
+            .fetch_and_dump_logs(resources, self.dir_path.clone(), &self.k8s_logs_override)
             .await
             .map_err(|e| {
                 log("Error occurred while collecting logs".to_string());
