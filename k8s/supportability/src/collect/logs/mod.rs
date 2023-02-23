@@ -210,6 +210,7 @@ impl Logger for LogCollection {
         &mut self,
         resources: HashSet<LogResource>,
         working_dir: String,
+        k8s_logs_override: bool,
     ) -> Result<(), LogError> {
         let mut errors = Vec::new();
         for resource in resources.iter() {
@@ -232,6 +233,7 @@ impl Logger for LogCollection {
                     )
                     .await
                     .is_ok()
+                    && !k8s_logs_override
                 {
                     continue;
                 }
@@ -333,6 +335,7 @@ pub(crate) trait Logger {
         &mut self,
         resources: HashSet<LogResource>,
         working_dir: String,
+        k8s_logs_override: bool,
     ) -> Result<(), LogError>;
     async fn get_data_plane_logging_services(&self) -> Result<HashSet<LogResource>, LogError>;
     async fn get_control_plane_logging_services(&self) -> Result<HashSet<LogResource>, LogError>;

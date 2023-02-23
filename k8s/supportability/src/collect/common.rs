@@ -23,6 +23,8 @@ pub(crate) struct DumpConfig {
     /// Topologer implements functionality to build topological infotmation of system
     pub(crate) topologer: Option<Box<dyn Topologer>>,
     pub(crate) output_format: OutputFormat,
+    /// Collect current pod logs along with historical logs
+    pub(crate) k8s_logs_override: bool,
 }
 
 /// The output format.

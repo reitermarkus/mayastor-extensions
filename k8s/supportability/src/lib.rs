@@ -47,6 +47,10 @@ pub struct SupportArgs {
     /// Kubernetes namespace of mayastor service, defaults to mayastor
     #[clap(global = true, long, short = 'n', default_value = "mayastor")]
     namespace: String,
+
+    /// Collect current pod logs along with historical logs
+    #[clap(global = true, short, long)]
+    current_logs: bool,
 }
 
 /// Supportability - collects state & log information of services and dumps it to a tar file.
@@ -115,6 +119,7 @@ impl SupportArgs {
             timeout: cli_args.timeout,
             topologer: None,
             output_format: OutputFormat::Tar,
+            k8s_logs_override: cli_args.current_logs,
         };
         let mut errors = Vec::new();
         match resource {

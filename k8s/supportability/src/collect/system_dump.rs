@@ -28,6 +28,7 @@ pub(crate) struct SystemDumper {
     logger: Box<dyn Logger>,
     k8s_resource_dumper: K8sResourceDumperClient,
     etcd_dumper: Option<EtcdStore>,
+    k8s_logs_override: bool,
 }
 
 impl SystemDumper {
@@ -114,6 +115,7 @@ impl SystemDumper {
             logger,
             k8s_resource_dumper,
             etcd_dumper,
+            k8s_logs_override: config.k8s_logs_override,
         }
     }
 
@@ -203,7 +205,7 @@ impl SystemDumper {
         log("Collecting logs...".to_string());
         let _ = self
             .logger
-            .fetch_and_dump_logs(resources, self.dir_path.clone())
+            .fetch_and_dump_logs(resources, self.dir_path.clone(), self.k8s_logs_override)
             .await
             .map_err(|e| {
                 log("Error occurred while collecting logs".to_string());

@@ -26,6 +26,7 @@ pub(crate) struct ResourceDumper {
     k8s_resource_dumper: K8sResourceDumperClient,
     etcd_dumper: Option<EtcdStore>,
     output_format: OutputFormat,
+    k8s_logs_override: bool,
 }
 
 impl ResourceDumper {
@@ -124,6 +125,7 @@ impl ResourceDumper {
             k8s_resource_dumper,
             etcd_dumper,
             output_format: config.output_format,
+            k8s_logs_override: config.k8s_logs_override,
         }
     }
 
@@ -175,7 +177,7 @@ impl ResourceDumper {
         log("Collecting logs...".to_string());
         let _ = self
             .logger
-            .fetch_and_dump_logs(resources, self.dir_path.clone())
+            .fetch_and_dump_logs(resources, self.dir_path.clone(), self.k8s_logs_override)
             .await
             .map_err(|e| errors.push(Error::LogCollectionError(e)));
         log("Completed collection of logs".to_string());
