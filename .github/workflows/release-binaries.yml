@@ -45,10 +45,10 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - run: |
           nix-build -A utils.release.${{ matrix.target }}.kubectl-plugin --arg incremental false ${{ matrix.system }}
-      - run: |
-          ls -al ./result/bin/
+      - name: Tar files
+        run: tar -cvf kubectl-mayastor-${{ matrix.arch }}-${{ matrix.target }}.tar ./result/bin
       - uses: actions/upload-artifact@v3
         with:
           name: kubectl-mayastor-${{ matrix.arch }}-${{ matrix.target }}
-          path: ./result/bin/
+          path: kubectl-mayastor-${{ matrix.arch }}-${{ matrix.target }}.tar
           if-no-files-found: error
