@@ -46,7 +46,10 @@ jobs:
       - run: |
           nix-build -A utils.release.${{ matrix.target }}.kubectl-plugin --arg incremental false ${{ matrix.system }}
       - name: Tar files
-        run: tar -czvf kubectl-mayastor-${{ matrix.arch }}-${{ matrix.target }}.tar.gz ./result/bin
+        run: |
+          pushd result/bin
+          tar -czvf ../../kubectl-mayastor-${{ matrix.arch }}-${{ matrix.target }}.tar.gz kubectl-mayastor${{ matrix.suffix}}
+          popd
       - uses: actions/upload-artifact@v3
         with:
           name: kubectl-mayastor-${{ matrix.arch }}-${{ matrix.target }}
